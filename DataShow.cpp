@@ -2,6 +2,7 @@
 #include<iostream>
 #include<opencv2/opencv.hpp>//包含opencv的头文件
 #include<Windows.h>
+#include<Windows.h>
 #include"Ploting.h"
 
 
@@ -33,21 +34,23 @@ void ShowImage(){
 }
 
 void PlotData(){
-	const int Cnt = 800;
-	double X[Cnt] = {0};
-	double Y[Cnt] = {0};
+	const int Cnt = 11111000;
+	std::shared_ptr<double>X(new double[Cnt]);
+	std::shared_ptr<double>Y(new double[Cnt]);
+	double*pX = X.get();
+	double*pY = Y.get();
 	for(int i = 0; i < Cnt; i++)
 	{
-		X[i] = (double)i;
-		Y[i] = (double)i*i+i*i*i - 20;
+		pX[i] = i/std::sinf(i);
+		pY[i] = (double)i*i+i - 20;
 	}
 
 	cvNamedWindow("hello",1);
 	Ploting plot;
 	plot.subplot(2,1,1);
-	plot.plot(X, Cnt, CV_RGB(0,0,255)); //可以只传入Y值 X默认从0开始 
+	plot.plot(X.get(), Cnt, CV_RGB(0,0,255)); //可以只传入Y值 X默认从0开始 
 	plot.subplot(2,1,2);
-	plot.plot(Y, Cnt, CV_RGB(255,255,0)); //可以只传入Y值 X默认从0开始 
+	plot.plot(Y.get(), Cnt, CV_RGB(255,255,0)); //可以只传入Y值 X默认从0开始 
 	double WinState = 0;
 	int propID = 0;
 
