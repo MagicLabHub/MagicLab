@@ -13,12 +13,12 @@ using namespace cv;
 using namespace std;
 
 struct FigureConfig{
-	int iRowNum;
-	int iColNum;
-	int iRegionIdx;
-	int iMergeRegion;
-	int iRegionHeight;
-	int iRegionWidth;
+	int				iRowNum;
+	int				iColNum;
+	int				iRegionIdx;
+	int				iMergeRegion;
+	int				iRegionHeight;
+	int				iRegionWidth;
 
 	FigureConfig()
 		:iRowNum(1)
@@ -31,12 +31,12 @@ struct FigureConfig{
 };
 
 struct PlotPara{
-	int iXOriPos;
-	int iYOriPos;
-	int iXLen;
-	int iYLen;
-	int iSleepTime;
-	Scalar color;
+	int				iXOriPos;
+	int				iYOriPos;
+	int				iXLen;
+	int				iYLen;
+	int				iSleepTime;
+	Scalar			color;
 	std::vector<CvPoint2D64f>vPoint;
 	PlotPara()
 		:iXOriPos(0)
@@ -50,6 +50,49 @@ struct PlotPara{
 	
 };
 
+struct AxisPara{
+	int				iPixelNum;
+	int				iGridNum;		// GridNum  of XGrid Unit 
+	int				iGridScale;	// PixelNum  of XGrid Unit 
+	double			dGridScale;
+	double			dMinGrid;
+	double			dMaxGrid;
+	double			dMinValue;
+	double			dMaxValue;
+
+	AxisPara()
+		:iPixelNum(0)
+		,iGridNum(0)
+		,iGridScale(0)
+		,dGridScale(0.0)
+		,dMinGrid(0.0)
+		,dMaxGrid(0.0)
+		,dMinValue(0.0)
+		,dMaxValue(0.0){
+	}
+};
+
+struct CoordPara{
+	IplImage*		Figure;
+	CvPoint2D64f	AxisOrigin;
+	int				iDataNum;
+	int				iWidth;
+	int				iHeight;
+	int				iOffsetX;
+	int				iOffsetY;
+	AxisPara		XAxis;
+	AxisPara		YAxis;
+	CoordPara()
+		:iDataNum(0)
+		,iWidth(0)
+		,iHeight(0)
+		,iOffsetX(10)
+		,iOffsetY(10)
+	{}
+};
+
+
+
 class Ploting
 {
 public: 
@@ -61,24 +104,26 @@ public:
 	void plot(T *y, size_t Cnt, CvScalar color){
 		PlotPara plotPara;
 		plotPara.color		= color;
-		plotPara.iXLen		= m_figConfig.iRegionWidth*m_figConfig.iMergeRegion;
-		plotPara.iYLen		= m_figConfig.iRegionHeight;
-		plotPara.iXOriPos	= (m_figConfig.iRegionIdx-1)%m_figConfig.iRowNum*m_figConfig.iRegionWidth;
-		plotPara.iYOriPos	= (m_figConfig.iRegionIdx-1)/m_figConfig.iRowNum*m_figConfig.iRegionHeight;
+		plotPara.iXLen		= m_figureConfig.iRegionWidth*m_figureConfig.iMergeRegion;
+		plotPara.iYLen		= m_figureConfig.iRegionHeight;
+		plotPara.iXOriPos	= (m_figureConfig.iRegionIdx-1)%m_figureConfig.iRowNum*m_figureConfig.iRegionWidth;
+		plotPara.iYOriPos	= (m_figureConfig.iRegionIdx-1)/m_figureConfig.iRowNum*m_figureConfig.iRegionHeight;
 		for (int i=0;i<Cnt;++i){
 			plotPara.vPoint.push_back(cvPoint2D64f((double)i, (double)y[i]));
 		}
 		DrawFlow(plotPara);
+		CvPoint2D64f OriPos = cvPoint2D64f(plotPara.iXOriPos,plotPara.iYOriPos);
+		DrawCoord(Figure,plotPara.vPoint,OriPos,plotPara.iXLen,plotPara.iYLen);
 	}
 
 	template<class T>
 	void plot(T *x, T *y, size_t Cnt, CvScalar color){
 		PlotPara plotPara;
 		plotPara.color		= color;
-		plotPara.iXLen		= m_figConfig.iRegionWidth*m_figConfig.iMergeRegion;
-		plotPara.iYLen		= m_figConfig.iRegionHeight;
-		plotPara.iXOriPos	= (m_figConfig.iRegionIdx-1)%m_figConfig.iRowNum*m_figConfig.iRegionWidth;
-		plotPara.iYOriPos	= (m_figConfig.iRegionIdx-1)/m_figConfig.iRowNum*m_figConfig.iRegionHeight;
+		plotPara.iXLen		= m_figureConfig.iRegionWidth*m_figureConfig.iMergeRegion;
+		plotPara.iYLen		= m_figureConfig.iRegionHeight;
+		plotPara.iXOriPos	= (m_figureConfig.iRegionIdx-1)%m_figureConfig.iRowNum*m_figureConfig.iRegionWidth;
+		plotPara.iYOriPos	= (m_figureConfig.iRegionIdx-1)/m_figureConfig.iRowNum*m_figureConfig.iRegionHeight;
 		for (int i=0;i<Cnt;++i){
 			plotPara.vPoint.push_back(cvPoint2D64f((double)x[i], (double)y[i]));
 		}
@@ -92,8 +137,27 @@ public:
 	void clear();
 private:
 	void CreatFigure(int iWidth=WINDOW_WIDTH,int iHeight=WINDOW_HEIGHT);
-	void DrawAxis (IplImage *image); //画坐标轴
+
+
+	void creatAxis (IplImage *image); 
+
 	void DrawFlow (PlotPara para); //画点
+
+
+	void DrawCoord(IplImage* Figure,std::vector<CvPoint2D64f>vPoint,CvPoint2D64f OriginPos,int iWidth,int iHeight);
+
+	void drawXYZone();
+
+	void drawAxisX();
+
+	void drawAxisY();
+
+	void calminmax(std::vector<CvPoint2D64f>vPoint);
+
+	CvPoint2D64f getRealPoint(CvPoint2D64f point);
+
+	CvPoint2D64f getPlotPoint(CvPoint2D64f point);
+
 public:
 	IplImage* Figure;
 private:
@@ -114,7 +178,8 @@ private:
     //边界大小
     int border_size;
 
-	FigureConfig m_figConfig;
+	CoordPara m_coordPara;
+	FigureConfig m_figureConfig;
 };
 
 
