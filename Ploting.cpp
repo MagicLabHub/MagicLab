@@ -17,53 +17,6 @@ void Ploting::CreatFigure(int CanvaWidth,int CanvaHeight){
 	this->backgroud_color = CV_RGB(255,255,255); //背景白色
 }
 
-
-
-void Ploting::DrawFlow (PlotPara para){
-	int bs = 5;
-	for(size_t i = 0; i < para.vPoint.size(); i++){
-			if(para.vPoint[i].x < this->x_min){
-				this->x_min = para.vPoint[i].x;
-			}else if(para.vPoint[i].x > this->x_max){
-				this->x_max = para.vPoint[i].x;
-			}
-
-			if(para.vPoint[i].y < this->y_min){
-				this->y_min = para.vPoint[i].y;
-			}else if(para.vPoint[i].y > this->y_max){
-				this->y_max = para.vPoint[i].y;
-			}
-
-	}
-	double x_range = this->x_max - this->x_min;
-	double y_range = this->y_max - this->y_min;
-	this->x_scale = (para.iXLen - bs*2)/ x_range;
-	this->y_scale = (para.iYLen - bs*2)/ y_range;
-
-
-	//清屏
-	//memset(Figure->imageData, 255, sizeof(unsigned char)*Figure->widthStep*Figure->height);
-
-	//printf("x_range: %f y_range: %f\n", x_range, y_range);
-	//绘制点
-	double tempX, tempY;
-	CvPoint prev_point, current_point;
-	std::vector<CvPoint>vTemp;
-	//prev_point = cvPoint(para.iXOriPos + bs, para.iYOriPos + para.iYLen - bs);
-	for(size_t i = 0; i < para.vPoint.size(); i++)
-	{
-		tempX = (int)((para.vPoint[i].x - this->x_min)*this->x_scale);
-		tempY = (int)((para.vPoint[i].y - this->y_min)*this->y_scale);
-		current_point = cvPoint(para.iXOriPos + bs + tempX, para.iYOriPos + para.iYLen - (tempY + bs));
-		vTemp.push_back(current_point);
-		// draw a line between two points
-		if(i>0)
-			cvLine(Figure, prev_point, current_point, para.color, 1, 8);
-		prev_point = current_point;
-		//cvWaitKey(para.iSleepTime);
-	}
-}
-
 void Ploting::subplot(int col,int row,int sIdx,int eIdx){
 	if (eIdx==-1) eIdx = sIdx;
 	m_figureConfig.iColNum = col;
@@ -99,12 +52,14 @@ void Ploting::calminmax(std::vector<CvPoint2D64f>vPoint){
 	for(size_t i = 0; i <vPoint.size(); i++){
 		if(vPoint[i].x < m_coordPara.XAxis.dMinValue){
 			m_coordPara.XAxis.dMinValue = vPoint[i].x;
-		}else if(vPoint[i].x > m_coordPara.XAxis.dMaxValue){
+		}
+		if(vPoint[i].x > m_coordPara.XAxis.dMaxValue){
 			m_coordPara.XAxis.dMaxValue = vPoint[i].x;
 		}
 		if(vPoint[i].y < m_coordPara.YAxis.dMinValue){
 			m_coordPara.YAxis.dMinValue = vPoint[i].y;
-		}else if(vPoint[i].y > m_coordPara.YAxis.dMaxValue){
+		}
+		if(vPoint[i].y > m_coordPara.YAxis.dMaxValue){
 			m_coordPara.YAxis.dMaxValue = vPoint[i].y;
 		}
 	}
@@ -135,41 +90,36 @@ void Ploting::drawXYZone()
 
 void Ploting::drawAxisX()
 {
-	int iGridXNum = m_coordPara.iDataNum;
-	if (iGridXNum > 20)
+	int iGridNum = m_coordPara.iDataNum;
+	if (iGridNum > 20)
 	{
-		iGridXNum = 10;
+		iGridNum = 10;
 	}
-	double fXDataLen        = m_coordPara.XAxis.dMaxValue - m_coordPara.XAxis.dMinValue;
-	double fXscale          = 1.0;
-	double fXScaleLen       = fXDataLen / fXscale;
+	double fDataLen        = m_coordPara.XAxis.dMaxValue - m_coordPara.XAxis.dMinValue;
+	double dValueStep       = 1.0;
+	double fScaleLen       = fDataLen / dValueStep;
 
 	double fZoomfactor      = 10;
-	while (fXScaleLen > 100 || fXScaleLen < 1)
+	while (fScaleLen > 100 || fScaleLen < 1)
 	{
-		fXscale = (fXScaleLen > 100) ? fXscale * fZoomfactor : fXscale / fZoomfactor;
-		fXScaleLen = fXDataLen / fXscale;
+		dValueStep = (fScaleLen > 100) ? dValueStep * fZoomfactor : dValueStep / fZoomfactor;
+		fScaleLen = fDataLen / dValueStep;
 	}
 	double fZoomfactor2     = 2;
-	double TextXScale       = 1.0;
 
-	if (fXscale>100)
+	while (fScaleLen > 2 * iGridNum || fScaleLen < iGridNum)
 	{
-		TextXScale = fXscale;
-		//xContent = "x10" + fXscale.ToString("e").Substring(8);
+		dValueStep = (fScaleLen > 2 * iGridNum) ? dValueStep * fZoomfactor2 : dValueStep/fZoomfactor2;
+		fScaleLen = fDataLen / dValueStep;
 	}
-
-
-	while (fXScaleLen > 2 * iGridXNum || fXScaleLen < iGridXNum)
-	{
-		fXscale = (fXScaleLen > 2 * iGridXNum) ? fXscale * fZoomfactor2 : fXscale/fZoomfactor2;
-		fXScaleLen = fXDataLen / fXscale;
-	}
-	double fGridXStep = fXscale;
-	iGridXNum   = (int)(fXScaleLen + 1.5);
-
 	int iGridStart  = 0;
-	double fStartPos = 0;
+	if (m_coordPara.XAxis.dMinValue<0)
+	{
+		iGridStart = (int)(m_coordPara.XAxis.dMinValue / dValueStep - 0.5);
+	}
+	iGridNum   = (int)(fScaleLen + 1.5);
+
+	
 
 	CvPoint prev_point, current_point;
 	Scalar	color	= CV_RGB(192,192,192);
@@ -177,29 +127,42 @@ void Ploting::drawAxisX()
 	double xmax		= m_coordPara.AxisOrigin.x + m_coordPara.iWidth - m_coordPara.iOffsetX;
 	double ymin		= m_coordPara.AxisOrigin.y + m_coordPara.iOffsetY;
 	double ymax		= m_coordPara.AxisOrigin.y + m_coordPara.iHeight - m_coordPara.iOffsetY;
-	double fXScaleStep = (xmax - xmin)/ iGridXNum;
-	for (int i = iGridStart; i <= iGridXNum; i++)
+	double dGridStep = (xmax - xmin)/ iGridNum;
+
+	double TextXScale       = 1.0;
+	if (dValueStep>100)
 	{
-		double x = i * fXScaleStep + fStartPos;
-		double TextData = i * fGridXStep / TextXScale;
+		TextXScale = dValueStep;
+		//xContent = "x10" + fXscale.ToString("e").Substring(8);
+	}
+	for (int i = iGridStart; i <= iGridNum; i++)
+	{
+		double x = (i-iGridStart) * dGridStep + xmin;
+		double TextData = i * dValueStep / TextXScale;
 		prev_point		= cvPoint(x,ymin);
 		current_point	= cvPoint(x,ymax);
 		cvLine(m_coordPara.Figure, prev_point, current_point, color, 1, 4);
 	}
+	m_coordPara.XAxis.dAxisLenght	= xmax - xmin;
+	m_coordPara.XAxis.iGridNum		= iGridNum;
+	m_coordPara.XAxis.iGridStart	= iGridStart;
+	m_coordPara.XAxis.dValueStep	= dValueStep;
+	m_coordPara.XAxis.dGridStep		= dGridStep;
+	m_coordPara.DataOrigin.x		= xmin - dGridStep * iGridStart;
+
 }
 
 void Ploting::drawAxisY()
 {
-	int iGridYNum = m_coordPara.iDataNum;
-	if (iGridYNum > 20)
+	int iGridNum = m_coordPara.iDataNum;
+	if (iGridNum > 20)
 	{
-		iGridYNum = 10;
+		iGridNum = 10;
 	}
 	double fYDataLen = m_coordPara.YAxis.dMaxValue - m_coordPara.YAxis.dMinValue;
-	int GridYrNum = (int)(-iGridYNum / 2);
-	int GridYaNum = (int)(iGridYNum /2);
-	double fGridYStep = 1.0;
-	double TextYScale = 1.0;
+	int iGridStart	= (int)(-iGridNum / 2);
+	int iGridEnd	= (int)(iGridNum /2);
+	double fGridStep = 1.0;
 	if (fYDataLen>0)
 	{
 		double fYscale = 1.0;
@@ -214,18 +177,16 @@ void Ploting::drawAxisY()
 
 
 		double fZoomfactor2 = 2;
-		while (fYScaleLen > 2 * iGridYNum || fYScaleLen < iGridYNum)
+		while (fYScaleLen > 2 * iGridNum || fYScaleLen < iGridNum)
 		{
-			fYscale = (fYScaleLen > 2 * iGridYNum) ? fYscale * fZoomfactor2 : fYscale / fZoomfactor2;
+			fYscale = (fYScaleLen > 2 * iGridNum) ? fYscale * fZoomfactor2 : fYscale / fZoomfactor2;
 			fYScaleLen = fYDataLen / fYscale;
 		}
-		fGridYStep = fYscale;
-		GridYrNum = (int)(m_coordPara.YAxis.dMinValue / fGridYStep - 1.5);
-		GridYaNum = (int)(m_coordPara.YAxis.dMaxValue / fGridYStep + 1.0);
-		iGridYNum = abs(GridYaNum - GridYrNum);
+		fGridStep = fYscale;
+		iGridStart = (int)(m_coordPara.YAxis.dMinValue / fGridStep - 1.5);
+		iGridEnd = (int)(m_coordPara.YAxis.dMaxValue / fGridStep + 1.0);
+		iGridNum = abs(iGridEnd - iGridStart);
 	}
-	int iGridStart = GridYrNum;
-	int iGridEnd = GridYaNum;
 
 	CvPoint prev_point, current_point;
 	Scalar	color	= CV_RGB(192,192,192);
@@ -233,28 +194,46 @@ void Ploting::drawAxisY()
 	double xmax		= m_coordPara.AxisOrigin.x + m_coordPara.iWidth - m_coordPara.iOffsetX;
 	double ymin		= m_coordPara.AxisOrigin.y + m_coordPara.iOffsetY;
 	double ymax		= m_coordPara.AxisOrigin.y + m_coordPara.iHeight - m_coordPara.iOffsetY;
-	double fYScaleStep = (ymax - ymin)/ iGridYNum;
-	for (int i = iGridStart; i <= iGridYNum; i++)
+	double fYScaleStep = (ymax - ymin)/ iGridNum;
+	double TextYScale = 1.0;
+	for (int i = iGridStart; i <= iGridEnd; i++)
 	{
-		double y = i * fYScaleStep;
-		double TextData = i * fGridYStep / TextYScale;
+		double y = (i-iGridStart) * fYScaleStep + ymin;
+		double TextData = i * fGridStep / TextYScale;
 		prev_point		= cvPoint(xmin,y);
-		current_point	= cvPoint(xmin,y);
+		current_point	= cvPoint(xmax,y);
 		cvLine(m_coordPara.Figure, prev_point, current_point, color, 1, 4);
+	}
+	m_coordPara.YAxis.dAxisLenght	= ymax - ymin;
+	m_coordPara.YAxis.iGridNum		= iGridNum;
+	m_coordPara.YAxis.iGridStart	= iGridStart;
+	m_coordPara.YAxis.dValueStep	= fGridStep;
+	m_coordPara.YAxis.dGridStep		= fYScaleStep;
+	m_coordPara.DataOrigin.y		= ymax + fYScaleStep * iGridStart;
+}
+
+void Ploting::DrawFlow(std::vector<CvPoint2D64f>vPoint,Scalar color){
+	CvPoint prev_point, current_point;
+	for(size_t i = 0; i < vPoint.size(); i++)
+	{
+		current_point = getRealPoint(vPoint[i]);
+		if(i>0)
+			cvLine(m_coordPara.Figure, prev_point, current_point, color, 1, 8);
+		prev_point = current_point;
 	}
 }
 
-//CvPoint2D64f GetRealPoint(CvPoint2D64f point)
-//{
-//	var realX = point.X * fXScaleStep / fGridXStep;
-//	var realY = -point.Y * fYScaleStep / fGridYStep + this.MainCanvas.ActualHeight + origialFigure.Y;
-//	if (double.IsNaN(realY) || double.IsInfinity(realY))
-//	{
-//		return new Point(0, 0);
-//	}
-//	return new Point(realX, realY);
-//}
-//
+CvPoint Ploting::getRealPoint(CvPoint2D64f point)
+{
+	int realX = point.x* m_coordPara.XAxis.dGridStep / m_coordPara.XAxis.dValueStep+ m_coordPara.DataOrigin.x;
+	int realY = m_coordPara.DataOrigin.y  - point.y * m_coordPara.YAxis.dGridStep / m_coordPara.YAxis.dValueStep;
+	if (_finite(point.y)==0)
+	{
+		return cvPoint(m_coordPara.AxisOrigin.x, m_coordPara.AxisOrigin.y);
+	}
+	return cvPoint(realX, realY);
+}
+
 //CvPoint2D64f GetPlotPoint(CvPoint2D64f point)
 //{
 //	var realX = point.X * fGridXStep / fXScaleStep;

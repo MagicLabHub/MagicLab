@@ -2,13 +2,14 @@
 #define _PLOTING_H
 #include"opencv2/opencv.hpp"
 #include <cmath>
+#include <cfloat>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include <vector>
 #include <math.h>
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 700
 using namespace cv;
 using namespace std;
 
@@ -51,22 +52,21 @@ struct PlotPara{
 };
 
 struct AxisPara{
-	int				iPixelNum;
-	int				iGridNum;		// GridNum  of XGrid Unit 
-	int				iGridScale;	// PixelNum  of XGrid Unit 
-	double			dGridScale;
-	double			dMinGrid;
-	double			dMaxGrid;
-	double			dMinValue;
-	double			dMaxValue;
+	int				iGridStart;		// Start Idx of Grid Line 
+	int				iGridNum;		// Number of Grid Line
+	double			dAxisLenght;	// Pixel length of Axis
+	double			dGridStep;		// Pixel length per Grid
+
+	double			dValueStep;		// Data Value Scale per Grid 
+	double			dMinValue;		// minValue of Data
+	double			dMaxValue;		// maxValue of Data
 
 	AxisPara()
-		:iPixelNum(0)
+		:dAxisLenght(0)
+		,iGridStart(0)
 		,iGridNum(0)
-		,iGridScale(0)
-		,dGridScale(0.0)
-		,dMinGrid(0.0)
-		,dMaxGrid(0.0)
+		,dGridStep(0.0)
+		,dValueStep(0)
 		,dMinValue(0.0)
 		,dMaxValue(0.0){
 	}
@@ -75,6 +75,7 @@ struct AxisPara{
 struct CoordPara{
 	IplImage*		Figure;
 	CvPoint2D64f	AxisOrigin;
+	CvPoint2D64f	DataOrigin;
 	int				iDataNum;
 	int				iWidth;
 	int				iHeight;
@@ -86,8 +87,8 @@ struct CoordPara{
 		:iDataNum(0)
 		,iWidth(0)
 		,iHeight(0)
-		,iOffsetX(10)
-		,iOffsetY(10)
+		,iOffsetX(30)
+		,iOffsetY(20)
 	{}
 };
 
@@ -111,9 +112,9 @@ public:
 		for (int i=0;i<Cnt;++i){
 			plotPara.vPoint.push_back(cvPoint2D64f((double)i, (double)y[i]));
 		}
-		DrawFlow(plotPara);
 		CvPoint2D64f OriPos = cvPoint2D64f(plotPara.iXOriPos,plotPara.iYOriPos);
 		DrawCoord(Figure,plotPara.vPoint,OriPos,plotPara.iXLen,plotPara.iYLen);
+		DrawFlow(plotPara.vPoint,plotPara.color);
 	}
 
 	template<class T>
@@ -127,7 +128,9 @@ public:
 		for (int i=0;i<Cnt;++i){
 			plotPara.vPoint.push_back(cvPoint2D64f((double)x[i], (double)y[i]));
 		}
-		DrawFlow(plotPara);
+		CvPoint2D64f OriPos = cvPoint2D64f(plotPara.iXOriPos,plotPara.iYOriPos);
+		DrawCoord(Figure,plotPara.vPoint,OriPos,plotPara.iXLen,plotPara.iYLen);
+		DrawFlow(plotPara.vPoint,plotPara.color);
 	}
 
 	void subplot(int col,int row,int sIdx,int eIdx=-1);
@@ -139,10 +142,11 @@ private:
 	void CreatFigure(int iWidth=WINDOW_WIDTH,int iHeight=WINDOW_HEIGHT);
 
 
-	void creatAxis (IplImage *image); 
+	void creatAxis(IplImage *image); 
 
-	void DrawFlow (PlotPara para); //»­µã
+	void DrawFlow(PlotPara para); //»­µã
 
+	void DrawFlow(std::vector<CvPoint2D64f>vPoint,Scalar color);
 
 	void DrawCoord(IplImage* Figure,std::vector<CvPoint2D64f>vPoint,CvPoint2D64f OriginPos,int iWidth,int iHeight);
 
@@ -154,9 +158,9 @@ private:
 
 	void calminmax(std::vector<CvPoint2D64f>vPoint);
 
-	CvPoint2D64f getRealPoint(CvPoint2D64f point);
+	CvPoint getRealPoint(CvPoint2D64f point);
 
-	CvPoint2D64f getPlotPoint(CvPoint2D64f point);
+	CvPoint2D64f getPlotPoint(CvPoint point);
 
 public:
 	IplImage* Figure;

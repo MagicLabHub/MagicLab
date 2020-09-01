@@ -34,31 +34,25 @@ void ShowImage(){
 }
 
 void PlotData(){
-	const int Cnt = 100;
+	const int Cnt = 1000;
 	std::shared_ptr<double>X(new double[Cnt]);
 	std::shared_ptr<double>Y(new double[Cnt]);
+	std::shared_ptr<double>Z(new double[Cnt]);
 	double*pX = X.get();
 	double*pY = Y.get();
-	for(int i = 0; i < Cnt; i++)
-	{
-		pX[i] = i/std::sinf(i);
-		pY[i] = (double)i*i+i - 20;
-	}
-
-	cvNamedWindow("hello",1);
-	Ploting plot;
-	plot.subplot(3,1,1);
-	plot.plot(X.get(), Cnt, CV_RGB(0,0,255)); //可以只传入Y值 X默认从0开始 
-	plot.subplot(3,1,2);
-	std::shared_ptr<double>Z(new double[Cnt]);
 	double*pZ = Z.get();
 	for(int i = 0; i < Cnt; i++)
 	{
+		pX[i] = std::sinf(i)*i*i*i;
+		pY[i] = std::cosf(i)*i*i*i;
 		pZ[i] = pX[i] - pY[i];
 	}
-	plot.plot(Z.get(), Cnt, CV_RGB(255,0,0)); //可以只传入Y值 X默认从0开始 
-	plot.subplot(3,1,3);
-	plot.plot(Y.get(), Cnt, CV_RGB(255,255,0)); //可以只传入Y值 X默认从0开始 
+	cvNamedWindow("hello",1);
+	Ploting plot;
+	plot.subplot(3,1,1);plot.plot(X.get(), Cnt, CV_RGB(0,0,255)); //可以只传入Y值 X默认从0开始 
+	plot.subplot(3,1,2);plot.plot(X.get(),Y.get(), Cnt, CV_RGB(255,0,0)); //可以只传入Y值 X默认从0开始 
+	plot.subplot(3,1,3);plot.plot(Z.get(), Cnt, CV_RGB(255,255,0)); //可以只传入Y值 X默认从0开始 
+
 	double WinState = 0;
 	int propID = 0;
 
