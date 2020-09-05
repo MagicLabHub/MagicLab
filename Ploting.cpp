@@ -91,26 +91,26 @@ void Ploting::drawXYZone()
 void Ploting::drawAxisX()
 {
 	int iGridNum = m_coordPara.iDataNum;
-	if (iGridNum > 20)
+	if (iGridNum > 10)
 	{
 		iGridNum = 10;
 	}
 	double fDataLen        = m_coordPara.XAxis.dMaxValue - m_coordPara.XAxis.dMinValue;
 	double dValueStep       = 1.0;
-	double fScaleLen       = fDataLen / dValueStep;
+	double fScaleLen       = int(fDataLen / dValueStep+0.5);
 
 	double fZoomfactor      = 10;
 	while (fScaleLen > 100 || fScaleLen < 1)
 	{
 		dValueStep = (fScaleLen > 100) ? dValueStep * fZoomfactor : dValueStep / fZoomfactor;
-		fScaleLen = fDataLen / dValueStep;
+		fScaleLen = int(fDataLen / dValueStep+0.5);
 	}
 	double fZoomfactor2     = 2;
 
-	while (fScaleLen > 2 * iGridNum || fScaleLen < iGridNum)
+	while ((fScaleLen > 2 * iGridNum || fScaleLen < iGridNum)&&(iGridNum>10))
 	{
 		dValueStep = (fScaleLen > 2 * iGridNum) ? dValueStep * fZoomfactor2 : dValueStep/fZoomfactor2;
-		fScaleLen = fDataLen / dValueStep;
+		fScaleLen = int(fDataLen / dValueStep+0.5);
 	}
 	int iGridStart  = 0;
 	if (m_coordPara.XAxis.dMinValue<0)
@@ -129,19 +129,38 @@ void Ploting::drawAxisX()
 	double ymax		= m_coordPara.AxisOrigin.y + m_coordPara.iHeight - m_coordPara.iOffsetY;
 	double dGridStep = (xmax - xmin)/ iGridNum;
 
-	double TextXScale       = 1.0;
+	double TextScale       = 1.0;
 	if (dValueStep>100)
 	{
-		TextXScale = dValueStep;
+		TextScale = dValueStep;
 		//xContent = "x10" + fXscale.ToString("e").Substring(8);
 	}
+
+	CvFont font;  
+	cvInitFont(&font, CV_FONT_HERSHEY_COMPLEX, 0.3, 0.3, 0, 1, 4);  
+	cv::Point origin; 
+	origin.y = m_coordPara.AxisOrigin.y + m_coordPara.iHeight;
+	int dec, sign;
+	int ndig = 1;
 	for (int i = iGridStart; i <= iGridNum; i++)
 	{
 		double x = (i-iGridStart) * dGridStep + xmin;
-		double TextData = i * dValueStep / TextXScale;
+		double TextData = i * dValueStep / TextScale;
+
 		prev_point		= cvPoint(x,ymin);
 		current_point	= cvPoint(x,ymax);
 		cvLine(m_coordPara.Figure, prev_point, current_point, color, 1, 4);
+		char dstr[20];
+		if (dGridStep>1000||dGridStep<0.001){
+			sprintf(dstr,"%.2e",TextData);
+		}else{
+			sprintf(dstr,"%.0f",TextData);
+		}
+		
+
+
+		origin.x = x-10;
+		cvPutText(m_coordPara.Figure, dstr, origin, &font, CV_RGB(0,0,0)); 
 	}
 	m_coordPara.XAxis.dAxisLenght	= xmax - xmin;
 	m_coordPara.XAxis.iGridNum		= iGridNum;
@@ -155,14 +174,14 @@ void Ploting::drawAxisX()
 void Ploting::drawAxisY()
 {
 	int iGridNum = m_coordPara.iDataNum;
-	if (iGridNum > 20)
+	if (iGridNum > 5)
 	{
-		iGridNum = 10;
+		iGridNum = 5;
 	}
 	double fYDataLen = m_coordPara.YAxis.dMaxValue - m_coordPara.YAxis.dMinValue;
 	int iGridStart	= (int)(-iGridNum / 2);
 	int iGridEnd	= (int)(iGridNum /2);
-	double fGridStep = 1.0;
+	double dValueStep = 1.0;
 	if (fYDataLen>0)
 	{
 		double fYscale = 1.0;
@@ -182,9 +201,9 @@ void Ploting::drawAxisY()
 			fYscale = (fYScaleLen > 2 * iGridNum) ? fYscale * fZoomfactor2 : fYscale / fZoomfactor2;
 			fYScaleLen = fYDataLen / fYscale;
 		}
-		fGridStep = fYscale;
-		iGridStart = (int)(m_coordPara.YAxis.dMinValue / fGridStep - 1.5);
-		iGridEnd = (int)(m_coordPara.YAxis.dMaxValue / fGridStep + 1.0);
+		dValueStep = fYscale;
+		iGridStart = (int)(m_coordPara.YAxis.dMinValue / dValueStep - 1.5);
+		iGridEnd = (int)(m_coordPara.YAxis.dMaxValue / dValueStep + 1.5);
 		iGridNum = abs(iGridEnd - iGridStart);
 	}
 
@@ -194,22 +213,37 @@ void Ploting::drawAxisY()
 	double xmax		= m_coordPara.AxisOrigin.x + m_coordPara.iWidth - m_coordPara.iOffsetX;
 	double ymin		= m_coordPara.AxisOrigin.y + m_coordPara.iOffsetY;
 	double ymax		= m_coordPara.AxisOrigin.y + m_coordPara.iHeight - m_coordPara.iOffsetY;
-	double fYScaleStep = (ymax - ymin)/ iGridNum;
-	double TextYScale = 1.0;
+	double dGridStep = (ymax - ymin)/ iGridNum;
+	double TextScale = 1.0;
+
+	CvFont font;  
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3, 0, 1, 4);  
+	cv::Point origin; 
+	origin.y = m_coordPara.AxisOrigin.x;
+	int dec, sign;
+	int ndig = 1;
 	for (int i = iGridStart; i <= iGridEnd; i++)
 	{
-		double y = (i-iGridStart) * fYScaleStep + ymin;
-		double TextData = i * fGridStep / TextYScale;
+		double y = (i-iGridStart) * dGridStep + ymin;
+		double TextData = i * dValueStep / TextScale;
 		prev_point		= cvPoint(xmin,y);
 		current_point	= cvPoint(xmax,y);
 		cvLine(m_coordPara.Figure, prev_point, current_point, color, 1, 4);
+		char dstr[20];
+		if (dGridStep>1000||dGridStep<0.001){
+			sprintf(dstr,"%.2e",TextData);
+		}else{
+			sprintf(dstr,"%.3f",TextData);
+		}
+		origin.y = y;
+		cvPutText(m_coordPara.Figure, dstr, origin, &font, CV_RGB(0,0,0)); 
 	}
 	m_coordPara.YAxis.dAxisLenght	= ymax - ymin;
 	m_coordPara.YAxis.iGridNum		= iGridNum;
 	m_coordPara.YAxis.iGridStart	= iGridStart;
-	m_coordPara.YAxis.dValueStep	= fGridStep;
-	m_coordPara.YAxis.dGridStep		= fYScaleStep;
-	m_coordPara.DataOrigin.y		= ymax + fYScaleStep * iGridStart;
+	m_coordPara.YAxis.dValueStep	= dValueStep;
+	m_coordPara.YAxis.dGridStep		= dGridStep;
+	m_coordPara.DataOrigin.y		= ymax + dGridStep * iGridStart;
 }
 
 void Ploting::DrawFlow(std::vector<CvPoint2D64f>vPoint,Scalar color){

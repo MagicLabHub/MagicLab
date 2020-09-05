@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <vector>
+#include <string>
 #include <math.h>
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 700
